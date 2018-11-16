@@ -1,0 +1,17 @@
+.DS_Store
+.atom/
+.dart_tool/
+.idea
+.vscode/
+.packages
+.pub/
+build/
+ios/.generated/
+packages
+.flutter-plugins
+vim-markdown-preview.html
+key.properties
+server_extentions/firestore_client
+server_extentions/ServiceAccountKey.json
+super8/ServiceAccountKey.json
+*.iml
