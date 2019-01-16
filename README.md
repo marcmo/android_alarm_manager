@@ -11,9 +11,8 @@ After importing this plugin to your project as usual, add the following to your
 `AndroidManifest.xml`:
 
 ```xml
-<service
-    android:name="io.flutter.plugins.androidalarmmanager.AlarmService"
-    android:exported="false"/>
+<receiver
+    android:name="io.flutter.plugins.androidalarmmanager.AlarmService" />
 ```
 
 Then in Dart code add:
@@ -29,6 +28,7 @@ void printHello() {
 
 main() async {
   final int helloAlarmID = 0;
+  await AndroidAlarmManager.initialize();
   runApp(...);
   await AndroidAlarmManager.periodic(const Duration(minutes: 1), helloAlarmID, printHello);
 }

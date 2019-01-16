@@ -6,11 +6,10 @@ package io.flutter.plugins.androidalarmmanager;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.IBinder;
 import android.util.Log;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry.PluginRegistrantCallback;
@@ -20,14 +19,13 @@ import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterRunArguments;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AlarmService extends Service {
+public class AlarmService extends BroadcastReceiver {
+
   public static final String TAG = "AlarmService";
   private static AtomicBoolean sStarted = new AtomicBoolean(false);
   private static FlutterNativeView sBackgroundFlutterView;
   private static MethodChannel sBackgroundChannel;
   private static PluginRegistrantCallback sPluginRegistrantCallback;
-
-  private String mAppBundlePath;
 
   public static void onInitialized() {
     sStarted.set(true);
@@ -105,13 +103,15 @@ public class AlarmService extends Service {
   public static void cancel(Context context, int requestCode) {
     Intent alarm = new Intent(context, AlarmService.class);
     PendingIntent existingIntent =
-        PendingIntent.getService(context, requestCode, alarm, PendingIntent.FLAG_NO_CREATE);
+        PendingIntent.getBroadcast(context, requestCode, alarm, PendingIntent.FLAG_NO_CREATE);
     if (existingIntent == null) {
       Log.i(TAG, "cancel: service not found");
       return;
     }
     AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-    manager.cancel(existingIntent);
+    if (manager != null) {
+      manager.cancel(existingIntent);
+    }
   }
 
   public static boolean setBackgroundFlutterView(FlutterNativeView view) {
@@ -127,43 +127,25 @@ public class AlarmService extends Service {
     sPluginRegistrantCallback = callback;
   }
 
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    Context context = getApplicationContext();
-    FlutterMain.ensureInitializationComplete(context, null);
-    mAppBundlePath = FlutterMain.findAppBundlePath(context);
-  }
-
   // This is where we handle alarm events before sending them to our callback
   // dispatcher in Dart.
   @Override
-  public int onStartCommand(Intent intent, int flags, int startId) {
+  public void onReceive(Context context, Intent intent) {
     if (!sStarted.get()) {
       Log.i(TAG, "AlarmService has not yet started.");
       // TODO(bkonyi): queue up alarm events.
-      return START_NOT_STICKY;
+      return;
     }
-    // Grab the handle for the callback associated with this alarm. Pay close
-    // attention to the type of the callback handle as storing this value in a
-    // variable of the wrong size will cause the callback lookup to fail.
+
     long callbackHandle = intent.getLongExtra("callbackHandle", 0);
     if (sBackgroundChannel == null) {
-      Log.e(
-          TAG,
-          "setBackgroundChannel was not called before alarms were scheduled." + " Bailing out.");
-      return START_NOT_STICKY;
+      Log.e(TAG, "setBackgroundChannel was not called before alarms were scheduled." + " Bailing out.");
+      return;
     }
     // Handle the alarm event in Dart. Note that for this plugin, we don't
     // care about the method name as we simply lookup and invoke the callback
     // provided.
-    sBackgroundChannel.invokeMethod("", new Object[] {callbackHandle});
-    return START_NOT_STICKY;
-  }
-
-  @Override
-  public IBinder onBind(Intent intent) {
-    return null;
+    sBackgroundChannel.invokeMethod("", new Object[]{callbackHandle});
   }
 
   private static void scheduleAlarm(
@@ -178,8 +160,9 @@ public class AlarmService extends Service {
     // Create an Intent for the alarm and set the desired Dart callback handle.
     Intent alarm = new Intent(context, AlarmService.class);
     alarm.putExtra("callbackHandle", callbackHandle);
-    PendingIntent pendingIntent =
-        PendingIntent.getService(context, requestCode, alarm, PendingIntent.FLAG_UPDATE_CURRENT);
+    Intent broadcastIntent = new Intent(context, AlarmService.class);
+    broadcastIntent.putExtra("callbackHandle", callbackHandle);
+    PendingIntent pendingBroadcastIntent = PendingIntent.getBroadcast(context, requestCode, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     // Use the appropriate clock.
     int clock = AlarmManager.RTC;
@@ -189,24 +172,28 @@ public class AlarmService extends Service {
 
     // Schedule the alarm.
     AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+    if (manager == null) {
+      Log.e(TAG, "AlarmManager could not be retrieved");
+      return;
+    }
     if (exact) {
       if (repeating) {
-        manager.setRepeating(clock, startMillis, intervalMillis, pendingIntent);
+        manager.setRepeating(clock, startMillis, intervalMillis, pendingBroadcastIntent);
       } else {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          manager.setExactAndAllowWhileIdle(clock, startMillis, pendingIntent);
+          manager.setExactAndAllowWhileIdle(clock, startMillis, pendingBroadcastIntent);
         } else {
-          manager.setExact(clock, startMillis, pendingIntent);
+          manager.setExact(clock, startMillis, pendingBroadcastIntent);
         }
       }
     } else {
       if (repeating) {
-        manager.setInexactRepeating(clock, startMillis, intervalMillis, pendingIntent);
+        manager.setInexactRepeating(clock, startMillis, intervalMillis, pendingBroadcastIntent);
       } else {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          manager.setAndAllowWhileIdle(clock, startMillis, pendingIntent);
+          manager.setAndAllowWhileIdle(clock, startMillis, pendingBroadcastIntent);
         } else {
-          manager.set(clock, startMillis, pendingIntent);
+          manager.set(clock, startMillis, pendingBroadcastIntent);
         }
       }
     }
