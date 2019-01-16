@@ -34,7 +34,7 @@ public class AndroidAlarmManagerPlugin implements MethodCallHandler, ViewDestroy
     channel.setMethodCallHandler(plugin);
     backgroundChannel.setMethodCallHandler(plugin);
     registrar.addViewDestroyListener(plugin);
-    AlarmService.setBackgroundChannel(backgroundChannel);
+    AlarmReceiver.setBackgroundChannel(backgroundChannel);
   }
 
   private Context mContext;
@@ -48,11 +48,11 @@ public class AndroidAlarmManagerPlugin implements MethodCallHandler, ViewDestroy
     String method = call.method;
     Object arguments = call.arguments;
     try {
-      if (method.equals("AlarmService.start")) {
+      if (method.equals("AlarmReceiver.start")) {
         startService((JSONArray) arguments);
         result.success(true);
-      } else if (method.equals("AlarmService.initialized")) {
-        AlarmService.onInitialized();
+      } else if (method.equals("AlarmReceiver.initialized")) {
+        AlarmReceiver.onInitialized();
       } else if (method.equals("Alarm.periodic")) {
         periodic((JSONArray) arguments);
         result.success(true);
@@ -72,7 +72,7 @@ public class AndroidAlarmManagerPlugin implements MethodCallHandler, ViewDestroy
 
   private void startService(JSONArray arguments) throws JSONException {
     long callbackHandle = arguments.getLong(0);
-    AlarmService.startAlarmService(mContext, callbackHandle);
+    AlarmReceiver.startAlarmService(mContext, callbackHandle);
   }
 
   private void oneShot(JSONArray arguments) throws JSONException {
@@ -81,7 +81,7 @@ public class AndroidAlarmManagerPlugin implements MethodCallHandler, ViewDestroy
     boolean wakeup = arguments.getBoolean(2);
     long startMillis = arguments.getLong(3);
     long callbackHandle = arguments.getLong(4);
-    AlarmService.setOneShot(mContext, requestCode, exact, wakeup, startMillis, callbackHandle);
+    AlarmReceiver.setOneShot(mContext, requestCode, exact, wakeup, startMillis, callbackHandle);
   }
 
   private void periodic(JSONArray arguments) throws JSONException {
@@ -91,17 +91,17 @@ public class AndroidAlarmManagerPlugin implements MethodCallHandler, ViewDestroy
     long startMillis = arguments.getLong(3);
     long intervalMillis = arguments.getLong(4);
     long callbackHandle = arguments.getLong(5);
-    AlarmService.setPeriodic(
+    AlarmReceiver.setPeriodic(
         mContext, requestCode, exact, wakeup, startMillis, intervalMillis, callbackHandle);
   }
 
   private void cancel(JSONArray arguments) throws JSONException {
     int requestCode = arguments.getInt(0);
-    AlarmService.cancel(mContext, requestCode);
+    AlarmReceiver.cancel(mContext, requestCode);
   }
 
   @Override
   public boolean onViewDestroy(FlutterNativeView nativeView) {
-    return AlarmService.setBackgroundFlutterView(nativeView);
+    return AlarmReceiver.setBackgroundFlutterView(nativeView);
   }
 }

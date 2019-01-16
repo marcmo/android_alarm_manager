@@ -46,7 +46,7 @@ void _alarmManagerCallbackDispatcher() {
   // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
   // https://github.com/flutter/flutter/issues/26431
   // ignore: strong_mode_implicit_dynamic_method
-  _channel.invokeMethod('AlarmService.initialized');
+  _channel.invokeMethod('AlarmReceiver.initialized');
 }
 
 /// A Flutter plugin for registering Dart callbacks with the Android
@@ -73,7 +73,7 @@ class AndroidAlarmManager {
         // TODO(amirh): remove this on when the invokeMethod update makes it to stable Flutter.
         // https://github.com/flutter/flutter/issues/26431
         // ignore: strong_mode_implicit_dynamic_method
-        .invokeMethod('AlarmService.start', <dynamic>[handle.toRawHandle()]);
+        .invokeMethod('AlarmReceiver.start', <dynamic>[handle.toRawHandle()]);
     return r ?? false;
   }
 

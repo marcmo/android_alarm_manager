@@ -12,7 +12,7 @@ After importing this plugin to your project as usual, add the following to your
 
 ```xml
 <receiver
-    android:name="io.flutter.plugins.androidalarmmanager.AlarmService" />
+    android:name="io.flutter.plugins.androidalarmmanager.AlarmReceiver" />
 ```
 
 Then in Dart code add:
@@ -41,7 +41,7 @@ isolates [here](https://api.dartlang.org/stable/2.0.0/dart-isolate/dart-isolate-
 
 If alarm callbacks will need access to other Flutter plugins, including the
 alarm manager plugin itself, it is necessary to teach the background service how
-to initialize plugins. This is done by giving the `AlarmService` a callback to call
+to initialize plugins. This is done by giving the `AlarmReceiver` a callback to call
 in the application's `onCreate` method. See the example's
 [Application overrides](https://github.com/flutter/plugins/blob/master/packages/android_alarm_manager/example/android/app/src/main/java/io/flutter/plugins/androidalarmmanagerexample/Application.java).
 In particular, its `Application` class is as follows:
@@ -51,7 +51,7 @@ public class Application extends FlutterApplication implements PluginRegistrantC
   @Override
   public void onCreate() {
     super.onCreate();
-    AlarmService.setPluginRegistrant(this);
+    AlarmReceiver.setPluginRegistrant(this);
   }
 
   @Override

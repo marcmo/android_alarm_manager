@@ -19,9 +19,9 @@ import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterRunArguments;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AlarmService extends BroadcastReceiver {
+public class AlarmReceiver extends BroadcastReceiver {
 
-  public static final String TAG = "AlarmService";
+  public static final String TAG = "AlarmReceiver";
   private static AtomicBoolean sStarted = new AtomicBoolean(false);
   private static FlutterNativeView sBackgroundFlutterView;
   private static MethodChannel sBackgroundChannel;
@@ -31,7 +31,7 @@ public class AlarmService extends BroadcastReceiver {
     sStarted.set(true);
   }
 
-  // Here we start the AlarmService. This method does a few things:
+  // Here we start the AlarmReceiver. This method does a few things:
   //   - Retrieves the callback information for the handle associated with the
   //     callback dispatcher in the Dart portion of the plugin.
   //   - Builds the arguments object for running in a new FlutterNativeView.
@@ -55,7 +55,7 @@ public class AlarmService extends BroadcastReceiver {
     // as a background view and does not create a drawing surface.
     sBackgroundFlutterView = new FlutterNativeView(context, true);
     if (mAppBundlePath != null && !sStarted.get()) {
-      Log.i(TAG, "Starting AlarmService...");
+      Log.i(TAG, "Starting AlarmReceiver...");
       FlutterRunArguments args = new FlutterRunArguments();
       args.bundlePath = mAppBundlePath;
       args.entrypoint = cb.callbackName;
@@ -101,7 +101,7 @@ public class AlarmService extends BroadcastReceiver {
   }
 
   public static void cancel(Context context, int requestCode) {
-    Intent alarm = new Intent(context, AlarmService.class);
+    Intent alarm = new Intent(context, AlarmReceiver.class);
     PendingIntent existingIntent =
         PendingIntent.getBroadcast(context, requestCode, alarm, PendingIntent.FLAG_NO_CREATE);
     if (existingIntent == null) {
@@ -132,7 +132,7 @@ public class AlarmService extends BroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
     if (!sStarted.get()) {
-      Log.i(TAG, "AlarmService has not yet started.");
+      Log.i(TAG, "AlarmReceiver has not yet started.");
       // TODO(bkonyi): queue up alarm events.
       return;
     }
@@ -158,9 +158,9 @@ public class AlarmService extends BroadcastReceiver {
       long intervalMillis,
       long callbackHandle) {
     // Create an Intent for the alarm and set the desired Dart callback handle.
-    Intent alarm = new Intent(context, AlarmService.class);
+    Intent alarm = new Intent(context, AlarmReceiver.class);
     alarm.putExtra("callbackHandle", callbackHandle);
-    Intent broadcastIntent = new Intent(context, AlarmService.class);
+    Intent broadcastIntent = new Intent(context, AlarmReceiver.class);
     broadcastIntent.putExtra("callbackHandle", callbackHandle);
     PendingIntent pendingBroadcastIntent = PendingIntent.getBroadcast(context, requestCode, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 

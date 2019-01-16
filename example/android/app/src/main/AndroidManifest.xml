@@ -22,8 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <service
-            android:name="io.flutter.plugins.androidalarmmanager.AlarmService"
-            android:exported="false"/>
+        <receiver
+            android:name="io.flutter.plugins.androidalarmmanager.AlarmReceiver" />
     </application>
 </manifest>
